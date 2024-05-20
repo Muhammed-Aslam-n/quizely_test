@@ -29,6 +29,11 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
+  String currentNumber = '0';
+  double? previousNumber;
+  String? operation;
+  bool isPreviousResultAppended = false;
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -38,11 +43,13 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           padding: const EdgeInsets.all(15.0),
           child: Column(
             children: [
-              const Expanded(
+              Expanded(
                 flex: 2,
                 child: Align(
                   alignment: Alignment.centerRight,
-                  child: ResultSection(),
+                  child: ResultSection(
+                    result: currentNumber,
+                  ),
                 ),
               ),
               Expanded(
@@ -61,7 +68,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                     if (newIndex % 4 == 0) {
                       return CalculatorButton(
                         text: listItems[index],
-                        onPressed: () {},
+                        onPressed: () {
+                          calculateResult(listItems[index]);
+                        },
                         bgColor: AppColors.orangeColor,
                       );
                     }
@@ -71,7 +80,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                           ? AppColors.blackGrey
                           : AppColors.greyColor,
                       text: listItems[index],
-                      onPressed: () {},
+                      onPressed: () {
+                        calculateResult(listItems[index]);
+                      },
                     );
                   },
                 ),
@@ -92,9 +103,15 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                       ),
                       child: const Padding(
                         padding: EdgeInsets.all(8.0),
-                        child: Text(
-                          '0',
-                          style: TextStyle(color: Colors.white,fontSize: 20),
+                        child: Row(
+                          children: [
+                            Text(
+                              '0',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 20),
+                            ),
+                            Spacer(),
+                          ],
                         ),
                       ),
                     ),
@@ -116,7 +133,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         padding: EdgeInsets.all(8.0),
                         child: Text(
                           '.',
-                          style: TextStyle(color: Colors.white,fontSize: 20),
+                          style: TextStyle(color: Colors.white, fontSize: 20),
                         ),
                       ),
                     ),
@@ -127,7 +144,35 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   Expanded(
                     flex: 2,
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        if (previousNumber != null && operation != null) {
+                          double secondNumber = double.parse(currentNumber);
+                          switch (operation) {
+                            case '+':
+                              add(previousNumber!, secondNumber);
+                              break;
+                            case '-':
+                              subtract(previousNumber!, secondNumber);
+                              break;
+                            case '*':
+                              multiply(previousNumber!, secondNumber);
+                              break;
+                            case '/':
+                              if (secondNumber == 0) {
+                                currentNumber = "Error";
+                              } else {
+                                divide(previousNumber!, secondNumber);
+                              }
+                              break;
+                            // Similar cases for multiply and divide
+                          }
+                          setState(() {
+                            previousNumber = null;
+                            operation = null;
+                            isPreviousResultAppended = true;
+                          });
+                        }
+                      },
                       style: OutlinedButton.styleFrom(
                         backgroundColor: AppColors.blackGrey,
                         side: BorderSide.none,
@@ -138,7 +183,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         padding: EdgeInsets.all(8.0),
                         child: Text(
                           '=',
-                          style: TextStyle(color: Colors.white,fontSize: 20),
+                          style: TextStyle(color: Colors.white, fontSize: 20),
                         ),
                       ),
                     ),
@@ -151,16 +196,90 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       ),
     );
   }
+
+  void add(double a, double b) {
+    currentNumber = (a + b).round().toString();
+  }
+
+  void subtract(double a, double b) {
+    currentNumber = (a - b).round().toString();
+  }
+
+  void multiply(double a, double b) {
+    currentNumber = (a * b).toString();
+  }
+
+  String divide(double a, double b) {
+    return currentNumber = (a / b).toString();
+  }
+
+  calculateResult(item) {
+    switch (item) {
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        setState(() {
+          currentNumber = currentNumber == '0' || isPreviousResultAppended
+              ? item
+              : currentNumber + item;
+          debugPrint('currentNumber $currentNumber');
+        });
+        break;
+      case '+':
+      case '-':
+      case '*':
+      case '/':
+        setState(() {
+          previousNumber = double.parse(currentNumber);
+          operation = item;
+          currentNumber = '0';
+          debugPrint(
+              'currentNumber $currentNumber and PrevNumber $previousNumber');
+        });
+        break;
+      case '+/-':
+        setState(() {
+          currentNumber = (double.parse(currentNumber) * -1).toString();
+        });
+        break;
+      case '%':
+        if (previousNumber != null && operation != null) {
+          double percentage =
+              previousNumber! * (double.parse(currentNumber) / 100);
+          currentNumber = percentage.toString();
+          setState(() {});
+        }
+
+        break;
+      case 'AC':
+        setState(() {
+          currentNumber = '0';
+          previousNumber = null;
+          operation = null;
+        });
+        break;
+      // Add cases for other buttons if needed
+    }
+  }
 }
 
 class ResultSection extends StatelessWidget {
-  const ResultSection({super.key});
+  final String result;
+
+  const ResultSection({super.key, required this.result});
 
   @override
   Widget build(BuildContext context) {
-    return const Text(
-      '0',
-      style: TextStyle(
+    return Text(
+      result,
+      style: const TextStyle(
           fontSize: 66, color: Colors.white, fontWeight: FontWeight.w400),
     );
   }
